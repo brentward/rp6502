@@ -254,26 +254,30 @@ uint8_t cfg_get_vga()
 
 bool cfg_set_timezone(const char *timezone)
 {
-    if (timezone != cfg_timezone)
+    bool ok = false;
+    int res;
+    res = strcmp(timezone, cfg_timezone);
+    // printf("timezone: %s\n", timezone);
+    // printf("cfg_timezone: %s\n", cfg_timezone);
+    // printf("diff: %i\n", res);
+
+    if (timezone && res != 0)
     {
-        unsigned char tz_old_buf[sizeof(__tzinfo_type)];
-        // unsigned char tz_buf[sizeof(__tzinfo_type)];
-        memcpy(&tz_old_buf, __gettzinfo(), sizeof(__tzinfo_type));
-        char tz_old_tzname[sizeof(_tzname[0])];
-        char tz_old_dstname[sizeof(_tzname[1])];
-        strlcpy(tz_old_tzname, _tzname[0], sizeof(tz_old_tzname));
-        strlcpy(tz_old_dstname, _tzname[1], sizeof(tz_old_dstname));
         set_timezone(timezone);
-        __tzinfo_type tz = *__gettzinfo();
-        int tz_dif_val = memcmp(tz_old_buf, (unsigned char *)&tz, sizeof(__tzinfo_type));
-        int tzname_dif_val = strcmp(tz_old_tzname, _tzname[0]);
-        int dstname_dif_val = strcmp(tz_old_dstname, _tzname[1]);
-        if (tz_dif_val != 0 && tzname_dif_val != 0 && dstname_dif_val != 0)
-            return false;
-        strlcpy(cfg_timezone, timezone, sizeof(cfg_timezone));
-        cfg_save_with_boot_opt(NULL);
+        char *new_timezone = getenv("TZ");
+        res = strcmp(timezone, new_timezone);
+        // printf("timezone: %s\n", timezone);
+        // printf("new_timezone: %s\n", new_timezone);
+        // printf("diff: %i\n", res);
+        if (res == 0) {
+            ok = true;
+            strlcpy(cfg_timezone, timezone, sizeof(cfg_timezone));
+            cfg_save_with_boot_opt(NULL);
+        } else {
+            set_timezone(cfg_timezone);
     }
-    return true;
+    return ok;
+
 }
 
 const char* cfg_get_timezone()

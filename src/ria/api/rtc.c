@@ -138,13 +138,17 @@ void rtc_api_get_timezone(void)
 {
     uint8_t clock_id = API_A;
     if (clock_id == 0) {
-        struct ria_timezone {
-            char    daylight;   /* True if daylight savings time active */
-            long    timezone;   /* Number of seconds behind UTC */
-            char    tz_name[5];  /* Name of timezone, e.g. CET */
-            char    dstname[5]; /* Name when daylight true, e.g. CEST */
-        } ria_tz;
-        ria_tz.timezone = 0;
+        // struct ria_timezone {
+        //     char    daylight;   /* True if daylight savings time active */
+        //     long    timezone;   /* Number of seconds behind UTC */
+        //     char    tz_name[5];  /* Name of timezone, e.g. CET */
+        //     char    dstname[5]; /* Name when daylight true, e.g. CEST */
+        // } ria_tz;
+        char    tz_daylight;
+        long    tz_timezone = 0;
+        char    tz_tz_name[5];  /* Name of timezone, e.g. CET */
+        char    tz_dstname[5]; /* Name when daylight true, e.g. CEST */
+        // ria_tz.timezone = 0;
         datetime_t rtc_info;
         bool result = rtc_get_datetime(&rtc_info);
         if (!result)
@@ -160,27 +164,44 @@ void rtc_api_get_timezone(void)
         };
         mktime(&timeinfo);
         __tzinfo_type tz = *__gettzinfo();
-        ria_tz.daylight = (char)timeinfo.tm_isdst;
+        // ria_tz.daylight = (char)timeinfo.tm_isdst;
+        tz_daylight = (char)timeinfo.tm_isdst;
         if (timeinfo.tm_isdst == 1) {
-            ria_tz.timezone -= tz.__tzrule[1].offset;
-            strlcpy(ria_tz.tz_name, _tzname[1], sizeof(ria_tz.tz_name));
-            strlcpy(ria_tz.dstname, _tzname[1], sizeof(ria_tz.dstname));
+            // ria_tz.timezone -= tz.__tzrule[1].offset;
+            // strlcpy(ria_tz.tz_name, _tzname[1], sizeof(ria_tz.tz_name));
+            // strlcpy(ria_tz.dstname, _tzname[1], sizeof(ria_tz.dstname));
+            tz_timezone -= tz.__tzrule[1].offset;
+            strlcpy(tz_tz_name, _tzname[1], sizeof(tz_tz_name));
+            strlcpy(tz_dstname, _tzname[1], sizeof(tz_dstname));
         } else {
-            ria_tz.timezone -= tz.__tzrule[0].offset;
-            strlcpy(ria_tz.tz_name, _tzname[0], sizeof(ria_tz.tz_name));
-            strlcpy(ria_tz.dstname, _tzname[1], sizeof(ria_tz.dstname));
+            // ria_tz.timezone -= tz.__tzrule[0].offset;
+            // strlcpy(ria_tz.tz_name, _tzname[0], sizeof(ria_tz.tz_name));
+            // strlcpy(ria_tz.dstname, _tzname[1], sizeof(ria_tz.dstname));
+            tz_timezone -= tz.__tzrule[0].offset;
+            strlcpy(tz_tz_name, _tzname[0], sizeof(tz_tz_name));
+            strlcpy(tz_dstname, _tzname[1], sizeof(tz_dstname));
         }
         uint8_t i;
+        // for (i = 0; i < 5; i ++)
+        // {
+        //     api_push_uint8((const uint8_t *)&(ria_tz.dstname[4 - i]));
+        // }
+        // for (i = 0; i < 5; i ++)
+        // {
+        //     api_push_uint8((const uint8_t *)&(ria_tz.tz_name[4 - i]));
+        // }
+        // api_push_int32(&(ria_tz.timezone));
+        // api_push_uint8((const uint8_t *)&(ria_tz.daylight));
         for (i = 0; i < 5; i ++)
         {
-            api_push_uint8((const uint8_t *)&(ria_tz.dstname[4 - i]));
+            api_push_uint8((const uint8_t *)&(tz_dstname[4 - i]));
         }
         for (i = 0; i < 5; i ++)
         {
-            api_push_uint8((const uint8_t *)&(ria_tz.tz_name[4 - i]));
+            api_push_uint8((const uint8_t *)&(tz_tz_name[4 - i]));
         }
-        api_push_int32(&(ria_tz.timezone));
-        api_push_uint8((const uint8_t *)&(ria_tz.daylight));
+        api_push_int32(&(tz_timezone));
+        api_push_uint8((const uint8_t *)&(tz_daylight));
         api_sync_xstack();
         return api_return_ax(0);
 
